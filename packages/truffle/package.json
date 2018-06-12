@@ -36,6 +36,7 @@
     "build": "npm run build-cli",
     "build-cli": "webpack --config ./cli.webpack.config.js",
     "test": "npm run build-cli && mocha --colors && git checkout -- ./build && echo",
+    "test:raw": "NO_BUILD=true mocha",
     "test:ci": "./scripts/test.sh",
     "test:geth": "MAIN_REPO_CI=true npm test"
   },
