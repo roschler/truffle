@@ -840,6 +840,8 @@ var contract = (function(module) {
     deployedBinary: function() {
       return Utils.linkBytecode(this.deployedBytecode, this.links);
     },
+    // ROS: Nick - do we need a Utils function for the network byte code field here?
+    //
     // deprecated; use bytecode
     unlinked_binary: {
       get: function() {
@@ -876,6 +878,27 @@ var contract = (function(module) {
         }
 
         this._json.deployedBytecode = code;
+      }
+    },
+    // ROS: Adding support for new network byte code field.
+    networkBytecode: {
+      get: function() {
+        var code = this._json.networkBytecode;
+
+        if (code.indexOf("0x") != 0) {
+          code = "0x" + code;
+        }
+
+        return code;
+      },
+      set: function(val) {
+        var code = val;
+
+        if (val.indexOf("0x") != 0) {
+          code = "0x" + code;
+        }
+
+        this._json.networkBytecode = code;
       }
     },
     sourceMap: {
@@ -15787,6 +15810,18 @@ var properties = {
       return value;
     }
   },
+  // ROS: Adding support for the new network byte code field.
+  "networkBytecode": {
+    "sources": [
+      "networkBytecode", "evm.networkBytecode.object"
+    ],
+    "transform": function(value) {
+      if (value && value.indexOf("0x") != 0) {
+        value = "0x" + value;
+      }
+      return value;
+    }
+  },
   "sourceMap": {
     "sources": ["sourceMap", "srcmap", "evm.bytecode.sourceMap"]
   },
@@ -16194,6 +16229,13 @@ module.exports={
       "allOf": [
         { "$ref": "#/definitions/Bytecode" },
         { "description": "On-chain deployed contract bytecode, with unresolved link references" }
+      ]
+    },
+    // ROS: Adding support for the new network byte code field.
+    "networkBytecode": {
+      "allOf": [
+        { "$ref": "#/definitions/Bytecode" },
+        { "description": "Snapshot of the actual network image of the contract byte code on the current blockchain client (e.g. - Ganache, etc.)" }
       ]
     },
     "sourceMap": {

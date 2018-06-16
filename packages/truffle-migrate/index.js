@@ -26,7 +26,7 @@ function Migration(file) {
    * @return {Promise} deployedBinary - Returns the actual byte code the network
    *  has for the contract whose address we provided.
    */
-  function getNetworkBytecode_promise(web3Intf, logger, address) {
+  function getNetworkBytecode(web3Intf, logger, address) {
 
     logger.log("Getting current snapshot of network byte code for contract address: %s", address);
     return new Promise((accept, reject) => {
@@ -44,7 +44,7 @@ function Migration(file) {
   };
   
   /**
-   * getAndStoreNetworkBytecode_promise - Return a promise that gets the
+   * getAndStoreNetworkBytecode - Return a promise that gets the
    *  deployed code for a contract from the current network, and then stores
    *  the returned byte code directly into the contract.
    *
@@ -54,11 +54,11 @@ function Migration(file) {
    *
    * @return {Promise}
    */
-  function getAndStoreNetworkBytecode_promise(web3Intf, logger, contract)
+  function getAndStoreNetworkBytecode(web3Intf, logger, contract)
   {
     logger.log("Getting network byte code and storing it for contract address: %s", contract.address);
     
-    return getNetworkBytecode_promise(web3Intf, logger, contract.address)
+    return getNetworkBytecode(web3Intf, logger, contract.address)
       .then(function(bytecode)
       {
         contract.network.networkBytecode = bytecode;
@@ -75,7 +75,7 @@ function Migration(file) {
  * @param  {Object} logger - A logging provider.
  * @param  {Array} contracts - An array of Truffle contracts.
  */
-function retrieveNetworkBytecodeAll_promise(web3Intf, logger, contracts)
+function retrieveNetworkBytecodeAll(web3Intf, logger, contracts)
 {
   logger.log("Retrieving network byte code for " + contracts.length + " contracts.");
   
@@ -87,7 +87,7 @@ function retrieveNetworkBytecodeAll_promise(web3Intf, logger, contracts)
   for (let ndx = 0; ndx < contracts.length; ndx++)
   {
     // Get the byte code for the specified contract.
-    aryPromises.push(getAndStoreNetworkBytecode_promise(web3Intf, logger, contracts[ndx]));
+    aryPromises.push(getAndStoreNetworkBytecode(web3Intf, logger, contracts[ndx]));
   }
   
   // Return a promise that waits for all the promises to complete.
@@ -156,7 +156,7 @@ Migration.prototype.run = function(options, callback) {
     //  contracts we just deployed.
     .then(function() {
       logger.log("Retrieving network byte code snapshots for each deployed contract...");
-      return retrieveNetworkBytecodeAll_promise(self.web3Intf, logger, resolver.contracts());
+      return retrieveNetworkBytecodeAll(self.web3Intf, logger, resolver.contracts());
     })
     .then(function() {
       if (options.save === false) return;

@@ -11,6 +11,13 @@ var find_contracts = require("truffle-contract-sources");
 var Config = require("truffle-config");
 var debug = require("debug")("compile");
 
+// ROS: IMPORTANT! Do not modify the network byte code field content
+//  in any way or the contract ABI validation functions that compare
+//  the network client's image of the contract byte code and that we
+//  captured at the time of the last contract deployment will fail,
+//  since they are expected to be an exact match. (i.e. - don't reorder
+//  that field's content, transform it, etc.).
+
 // Most basic of the compile commands. Takes a hash of sources, where
 // the keys are file or module paths and the values are the bodies of
 // the contracts. Does not evaulate dependencies that aren't already given.
@@ -163,6 +170,8 @@ var compile = function(sources, options, callback) {
         abi: contract.abi,
         bytecode: "0x" + contract.evm.bytecode.object,
         deployedBytecode: "0x" + contract.evm.deployedBytecode.object,
+        // ROS: Adding new network byte code field to the contract definition.
+        networkBytecode: "0x" + contract.evm.networkBytecode.object,
         unlinked_binary: "0x" + contract.evm.bytecode.object, // deprecated
         compiler: {
           "name": "solc",
