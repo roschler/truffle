@@ -8,104 +8,14 @@ var Web3 = require("web3");
 var expect = require("truffle-expect");
 var Deployer = require("truffle-deployer");
 
+// ROS: Added the DebugUtils module so we can access the new network byte code
+//  related utility functions.
+var DebugUtils = require("truffle-debug-utils");
+
 function Migration(file) {
   this.file = path.resolve(file);
   this.number = parseInt(path.basename(file));
 };
-
-  /**
-   * getNetworkBytecode - Return a promise that gets the deployed code for
-   *  a contract from the current network.
-   *
-   * NOTE: This function was sourced from the getDeployedCode() function
-   *  found in the truffle-debugger module.
-   * @param  {Object} web3Intf - A web3 interface for us to use
-   * @param  {Object} logger - A logging provider.
-   * @param  {String} address - The address of the contract whose byte code we want.
-   *
-   * @return {Promise} deployedBinary - Returns the actual byte code the network
-   *  has for the contract whose address we provided.
-   */
-  function getNetworkBytecode(web3Intf, logger, address) {
-
-    logger.log("Getting current snapshot of network byte code for contract address: %s", address);
-    return new Promise((accept, reject) => {
-      web3Intf.eth.getCode(address, (err, deployedBinary) => {
-        if (err)
-        {
-          logger.log("Error during byte retrieval.  Error number: %o", err);
-          return reject(err);
-        }
-        
-        logger.log("Successfully retrieved network byte code for contract at address: %s", address);
-        accept(deployedBinary);
-      });
-    });
-  };
-  
-  /**
-   * getAndStoreNetworkBytecode - Return a promise that gets the
-   *  deployed code for a contract from the current network, and then stores
-   *  the returned byte code directly into the contract.
-   *
-   * @param  {Object} web3Intf - A web3 interface for us to use
-   * @param  {Object} logger - A logging provider.
-   * @param  {Object} contract - A Truffle contract.
-   *
-   * @return {Promise}
-   */
-  function getAndStoreNetworkBytecode(web3Intf, logger, contract)
-  {
-    logger.log("Getting network byte code and storing it for contract address: %s", contract.address);
-    
-    return getNetworkBytecode(web3Intf, logger, contract.address)
-      .then(function(bytecode)
-      {
-        contract.network.networkBytecode = bytecode;
-        logger.log("Successfully stored the network for contract address: %s", contract.address);
-      });
-  }
-
-/**
- * This function returns a promise that iterates the Truffle contracts
- *  passed to us and retrieves the actual byte code for each one from
- *  the current network using the web3 interface.
- *
- * @param  {Object} web3Intf - A web3 interface for us to use
- * @param  {Object} logger - A logging provider.
- * @param  {Array} contracts - An array of Truffle contracts.
- */
-function retrieveNetworkBytecodeAll(web3Intf, logger, contracts)
-{
-  logger.log("Retrieving network byte code for " + contracts.length + " contracts.");
-  
-  // Build an array of promises that will get the network byte code
-  //  for each contract in the contracts array and store the
-  //  returned byte code directly into the contract.
-  let aryPromises = new Array;
-  
-  for (let ndx = 0; ndx < contracts.length; ndx++)
-  {
-    // Get the byte code for the specified contract.
-    aryPromises.push(getAndStoreNetworkBytecode(web3Intf, logger, contracts[ndx]));
-  }
-  
-  // Return a promise that waits for all the promises to complete.
-  return Promise.all(aryPromises);
-
-/*
-  return new Promise(function(accept, reject)
-  {
-    try{
-    }
-    catch(err)
-    {
-        // Convert the error into a promise rejection.
-        reject(err);
-    };
-  });
-*/
-}
 
 Migration.prototype.run = function(options, callback) {
   var self = this;
@@ -156,7 +66,7 @@ Migration.prototype.run = function(options, callback) {
     //  contracts we just deployed.
     .then(function() {
       logger.log("Retrieving network byte code snapshots for each deployed contract...");
-      return retrieveNetworkBytecodeAll(self.web3Intf, logger, resolver.contracts());
+      return DebugUtils.retrieveAndStoreNetworkBytecodeAll(self.web3Intf, logger, resolver.contracts());
     })
     .then(function() {
       if (options.save === false) return;

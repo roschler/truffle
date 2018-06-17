@@ -20,7 +20,7 @@ var debug = require("debug")("compile");
 
 // Most basic of the compile commands. Takes a hash of sources, where
 // the keys are file or module paths and the values are the bodies of
-// the contracts. Does not evaulate dependencies that aren't already given.
+// the contracts. Does not evaluate dependencies that aren't already given.
 //
 // Default options:
 // {
@@ -171,7 +171,11 @@ var compile = function(sources, options, callback) {
         bytecode: "0x" + contract.evm.bytecode.object,
         deployedBytecode: "0x" + contract.evm.deployedBytecode.object,
         // ROS: Adding new network byte code field to the contract definition.
-        networkBytecode: "0x" + contract.evm.networkBytecode.object,
+        //  Not here.  This appears to be after the solidity compile operation.  The
+        //   new network byte code field is only available from the contract JSON
+        //   file.  That content is not present until the resolver pulls it in.
+        //   (my possibly incorrect interpretation).
+        // networkBytecode: "0x" + contract.evm.networkBytecode.object,
         unlinked_binary: "0x" + contract.evm.bytecode.object, // deprecated
         compiler: {
           "name": "solc",

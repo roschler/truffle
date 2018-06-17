@@ -48,20 +48,55 @@ var command = {
       var enabledExpressions = new Set();
       var breakpoints = [];
 
-
-      let compilePromise = new Promise(function(accept, reject) {
-        compile.all(config, function(err, contracts, files) {
-          if (err) { return reject(err); }
-
-          return accept({
-            contracts: contracts,
-            files: files
+      // ROS: Create a promise that compiles all the contracts with the additional feature
+      //  of injecting the given artifacts into the result.
+      let compilePromise = function(artifacts)
+      {
+        return new Promise(function(accept, reject) {
+            compile.all(config, function(err, contracts, files) {
+              if (err) { return reject(err); }
+      
+              return accept({
+                artifacts: artifacts,
+                contracts: contracts,
+                files: files
+              });
+            })
           });
-        });
-      });
-
-      var sessionPromise = compilePromise
+      }
+      
+      var sessionPromise = DebugUtils.gatherArtifacts(config)
+        .then(function(artifacts) {
+          return compilePromise(artifacts);
+        })
         .then(function(result) {
+          // Validate the network byte code snapshots we have stored against
+          //  the current actual contents in the network client.
+          return DebugUtils.validateBytecode(options, result.artifacts)
+          .then(function(validationResults){
+            return({result, validationResults});
+          });
+        })
+        .then(function(tuple) {
+          
+          // TODO: We may need to add a "force/continue anyways" option here to
+          //  handle users that lost their archive files or are have files from
+          //  before the byte code validation feature was added.
+          //
+          // If we had an error during the byte code validation, stop the debug session.
+          let validationResults = tuple.validationResults;
+          let validationResultsMsg = validationResults.formattedTestResultsMessage();
+          
+          if (validationResults.isError)
+            throw new Error(validationResultsMsg);
+            
+          // Show the results of the validation before initiating the debug session.
+          config.logger.log("\n------------ CONTRACT BYTE CODE VALIDATION RESULTS -----------\n");
+          config.logger.log(validationResultsMsg);
+          config.logger.log("\n--------------------------------------------------------------\n");
+          
+          let result = tuple.result;
+          
           config.logger.log(DebugUtils.formatStartMessage());
 
           debug("contracts %O", result.contracts);
